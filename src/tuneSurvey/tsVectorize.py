@@ -1,10 +1,32 @@
 """Vectorize models with given 1 term prediction
+    
 """
-
-
+import pickle
+from copy import deepcopy
 
 from sklearn.model_selection import GridSearchCV
-def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_function = GridSearchCV,verbose =False):
+
+
+
+def split_tscv_by_order_features(rawdata, order_features):
+    """
+    to protect origional vector, do from copy import deepcopy"""
+    X = np.zeros([n_obs-order_features, order_features*n_var])
+    #yjs are the columns
+    for i in range(n_obs - order_features):
+        for j in range(order_features):
+            for k in range(n_var):
+                X[i,k+j*n_var] = rawData[i+j,k]
+
+    X_usable = X
+    Y_usable = rawData[order_features:,:]#
+    return X_usable, Y_usable
+    
+
+
+
+
+def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search", modelName = "Unnamed"):
     """
     # model - type of model (SVR(), randomForest()...)
     # X - predictor - all rows of X are used for prediction, but each model only gives on entry in Y
@@ -12,19 +34,123 @@ def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_func
     # cv - cross validation type (scikit-learn obj) passed in to model selection type.
     # cv is either a number for k fold or a model selection obj for esample, cv = TimeSeriesSplit(n_splits=2, max_train_size=None, test_size=2, gap=0)
     """
-    modelName = model().__class__.__name__
+    
     
     #Series with verbose for debugging
     n_obs, n_var = Y.shape
     m_Yi = []# Collecting the model for each term in the row of the time series
     for i in range(n_var):
-        if verbose:
-            print("working on:" + str(modelName),"model",i)
-        m_Yi.append(search_function(model(), param_grid = parameters, cv=cv).fit(X,Y[:,i]))
+        try:
+            if verbose:
+                print("working on:" + str(modelName),"model",i)
+            m_Yij = search_function(model, param_grid = parameters, cv=cv).fit(X,Y[:,i])
+
+            if save_searches:
+
+
+                filename = path + "/" + modelname + str(i)
+                
+                pickle.dump(m_Yij, open(filename, "wb"))
+
+
+            m_Yi.append(m_Yij)
+        except:
+            print("Err during " + str(i))
     return m_Yi
 
 
-def saveModelList_s(modelList,X,Y,path="sklModels",verbose=verbose):
+
+def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search"):
+    """
+    # model - type of model (SVR(), randomForest()...)
+    # X - predictor - all rows of X are used for prediction, but each model only gives on entry in Y
+    # Y - matrix containing n_var number of column vectors as target of the prediction
+    # cv - cross validation type (scikit-learn obj) passed in to model selection type.
+    # cv is either a number for k fold or a model selection obj for esample, cv = TimeSeriesSplit(n_splits=2, max_train_size=None, test_size=2, gap=0)
+    """
+
+        
+    try:
+        modelName = modelDict["modelName"]
+    except:
+        modelName = model.__class__.__name__
+    parameters = modelDict["par"]
+    model = modelDict["modelInit"]
+    #Series with verbose for debugging
+    n_obs, n_var = Y.shape
+    m_Yi = []# Collecting the model for each term in the row of the time series
+    for i in range(n_var):
+        try:
+            if verbose:
+                print("working on:" + str(modelName),"model",i)
+            m_Yij = search_function(model, param_grid = parameters, cv=cv).fit(X,Y[:,i])
+
+            if save_searches:
+
+
+                filename = path + "/" + modelName + str(i)
+                
+                pickle.dump(m_Yij, open(filename, "wb"))
+
+
+            m_Yi.append(m_Yij)
+        except:
+            print("Err during " + str(i))
+    return m_Yi
+
+def vectorized_Search_hyperparameter_multimodelDict(modelList,X,Y,cv=5,search_function=GridSearchCV,verbose=False,path = "vec_search"):
+    # modelList contains subLists of models, and parameters and maybe types (regressor) or criterion in the future
+    
+    # model |best par|best fit result|... path to save the model?
+    resultList = []
+    n_obs, n_var = Y.shape
+    for i,m in enumerate(modelList):
+        modelClassName = m["modelInit"].__class__.__name__
+        if verbose:
+            print("working on:"+str(modelClassName))
+        m_Yi = vectorized_Search_hyperparameter_modelDict(m, X, Y,cv,search_function,verbose, path)
+        
+        resultList.append(m_Yi.deepcopy())
+    return resultList
+    
+
+
+
+
+def vectorized_Search_hyperparameter_multimodel(modelList,X,Y,cv=5,search_function=GridSearchCV,verbose=False):
+    # modelList contains subLists of models, and parameters and maybe types (regressor) or criterion in the future
+    
+    # model |best par|best fit result|... path to save the model?
+    resultList = []
+    n_obs, n_var = Y.shape
+    for i,m in enumerate(modelList):
+        modelClassName = m["modelInit"].__class__.__name__
+        if verbose:
+            print("working on:"+str(modelClassName))
+        m_Yi = []# Collecting the model for each term in the row of the time series
+        for j in range(n_var):
+            if verbose:
+                print("working on:model",j)
+            m_Yi.append(search_function(m["modelInit"], param_grid = m["par"], cv=cv).fit(X,Y[:,j]))
+        resultList.append(m_Yi.copy())
+    return resultList
+
+def split_tscv_by_order_features(rawdata, order_features):
+    """
+    to protect origional vector, do from copy import deepcopy"""
+    X = np.zeros([n_obs-order_features, order_features*n_var])
+    #yjs are the columns
+    for i in range(n_obs - order_features):
+        for j in range(order_features):
+            for k in range(n_var):
+                X[i,k+j*n_var] = rawData[i+j,k]
+
+    X_usable = X
+    Y_usable = rawData[order_features:,:]#
+    return X_usable, Y_usable
+
+
+def saveModelList_s(modelList,X,Y,path="sklModels",verbose=False):
     """save a list of model named by modelSequence() convention"""
     pgd = ParameterGrid(modelList['par'])
     if verbose:
@@ -198,3 +324,242 @@ def reduce_best_rolling_predictor(predictorList, Y_train, Y_test, criterion,n, v
             if verbose:
                 print("current best model index  ", best_model_index)
     return best_model_index
+
+
+
+
+
+
+
+
+
+
+
+
+
+import optuna
+
+from sklearn.metrics import mean_squared_error
+from torch.utils.data import DataLoader, TensorDataset
+
+
+
+def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq_len,modelName = "Unnamed"):
+    """
+    Returns an objective() function to be optimized by Optuna
+
+    tscv = TimeSeriesSplit(n_splits=3)
+
+    objective = create_objective_ts(LSTM,tscv,lstm_grid,opt_grid,data,device, seq_len)
+
+    study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
+    study.optimize(objective, n_trials=100)
+
+    # Print best hyperparameters and loss
+    print('Best hyperparameters:', study.best_params)
+    print('Best loss:', study.best_value)
+
+
+"""
+    nVar = data.shape[1]
+    def objective(trial):
+        # Sample hyperparameters from tuning grid
+        params = {param_name: trial.suggest_categorical(param_name, param_values) 
+                  for param_name, param_values in tune_grid.items()}
+        params['input_size'] = nVar
+        params['output_size'] = nVar
+        # Initialize model
+        model = model_class(**params)
+        model.to(device)
+        
+        # Define loss function and optimizer
+        criterion = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=trial.suggest_categorical('learning_rate',opt_params['learning_rate']))
+        
+        num_epochs = trial.suggest_categorical('num_epochs',opt_params['num_epochs'])
+        batch_size = trial.suggest_categorical('batch_size',opt_params['batch_size'])
+        
+        # Train and evaluate model using cross-validation
+        val_losses = []
+        for train_idx, val_idx in cv.split(data):
+
+            id_split = val_idx[0]
+            
+            train_X_fold, train_y_fold, val_X_fold, val_y_fold = create_n_seq_ts(data[:val_idx[-1]+1,:],seq_len,id_split)
+            train_X_fold = train_X_fold[train_idx[0]:]
+            train_y_fold = train_y_fold[train_idx[0]:]
+            train_dataset = TensorDataset(train_X_fold.float(), 
+                                          train_y_fold.float())#.to(device)
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+
+            val_dataset = TensorDataset(val_X_fold.float(), 
+                                        val_y_fold.float())#.to(device)
+            val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)# only load 1 entry of data to predict next 1 day
+            
+            
+            for epoch in range(num_epochs):
+                # Train model
+                model.train()
+                for inputs, targets in train_loader:
+                    inputs = inputs.to(device)
+                    targets = targets.to(device)
+                    
+                    optimizer.zero_grad()
+                    
+                    outputs = model(inputs)
+                    
+                    loss = criterion(outputs, targets)
+                    loss.backward()
+                    optimizer.step()
+
+                # Evaluate model on validation set
+                model.eval()
+                with torch.no_grad():
+                    val_loss = 0
+                    for inputs, targets in val_loader:
+                        inputs = inputs.to(device)
+                        targets = targets.to(device)
+
+                        outputs = model(inputs)
+                        val_loss += criterion(outputs, targets).item()
+                    val_loss /= len(val_loader)
+                    val_losses.append(val_loss)
+
+                trial.report(val_loss, epoch)
+                # Prune if necessary
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+            path = "tsNN_search"
+            with open(path+"/"+modelName+"_"+str(trial.number)+".pickle", "wb") as fout:
+                pickle.dump(model, fout)
+        loss_score = float(np.mean(val_losses))
+        return loss_score
+    return objective
+
+
+
+
+def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "tsNN_search"):
+    """
+    Returns an objective() function to be optimized by Optuna
+
+    tscv = TimeSeriesSplit(n_splits=3)
+
+    objective = create_objective_ts(LSTM,tscv,lstm_grid,opt_grid,data,device, seq_len)
+
+    study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
+    study.optimize(objective, n_trials=100)
+
+    # Print best hyperparameters and loss
+    print('Best hyperparameters:', study.best_params)
+    print('Best loss:', study.best_value)
+
+
+"""
+    modelName = modelDict["modelName"]
+    tune_grid = modelDict["par"]
+    opt_params = modelDict["opt"]
+    nVar = data.shape[1]
+    def objective(trial):
+        # Sample hyperparameters from tuning grid
+        params = {param_name: trial.suggest_categorical(param_name, param_values) 
+                  for param_name, param_values in tune_grid.items()}
+        params['input_size'] = nVar
+        params['output_size'] = nVar
+        # Initialize model
+        model = model_class(**params)
+        model.to(device)
+        
+        # Define loss function and optimizer
+        criterion = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=trial.suggest_categorical('learning_rate',opt_params['learning_rate']))
+        
+        num_epochs = trial.suggest_categorical('num_epochs',opt_params['num_epochs'])
+        batch_size = trial.suggest_categorical('batch_size',opt_params['batch_size'])
+        
+        # Train and evaluate model using cross-validation
+        val_losses = []
+        for train_idx, val_idx in cv.split(data):
+
+            id_split = val_idx[0]
+            
+            train_X_fold, train_y_fold, val_X_fold, val_y_fold = create_n_seq_ts(data[:val_idx[-1]+1,:],seq_len,id_split)
+            train_X_fold = train_X_fold[train_idx[0]:]
+            train_y_fold = train_y_fold[train_idx[0]:]
+            train_dataset = TensorDataset(train_X_fold.float(), 
+                                          train_y_fold.float())#.to(device)
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+
+            val_dataset = TensorDataset(val_X_fold.float(), 
+                                        val_y_fold.float())#.to(device)
+            val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)# only load 1 entry of data to predict next 1 day
+            
+            
+            for epoch in range(num_epochs):
+                # Train model
+                model.train()
+                for inputs, targets in train_loader:
+                    inputs = inputs.to(device)
+                    targets = targets.to(device)
+                    
+                    optimizer.zero_grad()
+                    
+                    outputs = model(inputs)
+                    
+                    loss = criterion(outputs, targets)
+                    loss.backward()
+                    optimizer.step()
+
+                # Evaluate model on validation set
+                model.eval()
+                with torch.no_grad():
+                    val_loss = 0
+                    for inputs, targets in val_loader:
+                        inputs = inputs.to(device)
+                        targets = targets.to(device)
+
+                        outputs = model(inputs)
+                        val_loss += criterion(outputs, targets).item()
+                    val_loss /= len(val_loader)
+                    val_losses.append(val_loss)
+
+                trial.report(val_loss, epoch)
+                # Prune if necessary
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+            try:
+                #path = "tsNN_search"
+                with open(path+"/"+modelName+"_"+str(trial.number)+".pickle", "wb") as fout:
+                    pickle.dump(model, fout)
+            except:
+                print("saving" +modelName+"failed in TS torch")
+        loss_score = float(np.mean(val_losses))
+        return loss_score
+    return objective
+
+
+
+
+
+
+def vsearch_modelList(modelList, data, seq_len, cv):
+    r = []
+    for modelDict in modelList:
+        if modelDict["from"] ==  "tabular":
+            X, Y = split_tscv_by_order_features(rawdata,seq_len)
+            ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
+            
+        elif modelDict["from"] == "torchTS":
+            
+            objective = create_objective_ts_modelDict(modelDict, cv, data, device, seq_len)
+            study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
+            study.optimize(objective, n_trials=100)
+            ri = study
+        else:
+            X, Y = split_tscv_by_order_features(rawdata,seq_len)
+            ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
+        r.append(deepcopy(ri))
+    return r
+
+
+

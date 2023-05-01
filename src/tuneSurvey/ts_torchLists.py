@@ -39,7 +39,7 @@ dimension mismatch of the model class
         
 
 """
-
+from copy import copy,deepcopy
 
 modelList_torch_tsRegressor = []
 
@@ -70,7 +70,7 @@ def create_n_seq_ts(data,seq_len,id_split):
 
 
 
-import optuna
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -103,107 +103,30 @@ import torch
 import optuna
 import numpy as np
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.metrics import mean_squared_error
-from torch.utils.data import DataLoader, TensorDataset
-
-    
-def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq_len):
-    """
-    Returns an objective() function to be optimized by Optuna
-
-    tscv = TimeSeriesSplit(n_splits=3)
-
-    objective = create_objective_ts(LSTM,tscv,lstm_grid,opt_grid,data,device, seq_len)
-
-    study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
-    study.optimize(objective, n_trials=100)
-
-    # Print best hyperparameters and loss
-    print('Best hyperparameters:', study.best_params)
-    print('Best loss:', study.best_value)
 
 
-"""
-    nVar = data.shape[1]
-    def objective(trial):
-        # Sample hyperparameters from tuning grid
-        params = {param_name: trial.suggest_categorical(param_name, param_values) 
-                  for param_name, param_values in tune_grid.items()}
-        params['input_size'] = nVar
-        params['output_size'] = nVar
-        # Initialize model
-        model = model_class(**params)
-        model.to(device)
-        
-        # Define loss function and optimizer
-        criterion = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=trial.suggest_categorical('learning_rate',opt_params['learning_rate']))
-        
-        num_epochs = trial.suggest_categorical('num_epochs',opt_params['num_epochs'])
-        batch_size = trial.suggest_categorical('batch_size',opt_params['batch_size'])
-        
-        # Train and evaluate model using cross-validation
-        val_losses = []
-        for train_idx, val_idx in cv.split(data):
 
-            id_split = val_idx[0]
-            
-            train_X_fold, train_y_fold, val_X_fold, val_y_fold = create_n_seq_ts(data[:val_idx[-1]+1,:],seq_len,id_split)
-            train_X_fold = train_X_fold[train_idx[0]:]
-            train_y_fold = train_y_fold[train_idx[0]:]
-            train_dataset = TensorDataset(train_X_fold.float(), 
-                                          train_y_fold.float())#.to(device)
-            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
-            val_dataset = TensorDataset(val_X_fold.float(), 
-                                        val_y_fold.float())#.to(device)
-            val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)# only load 1 entry of data to predict next 1 day
-            
-            
-            for epoch in range(num_epochs):
-                # Train model
-                model.train()
-                for inputs, targets in train_loader:
-                    inputs = inputs.to(device)
-                    targets = targets.to(device)
-                    
-                    optimizer.zero_grad()
-                    
-                    outputs = model(inputs)
-                    
-                    loss = criterion(outputs, targets)
-                    loss.backward()
-                    optimizer.step()
 
-                # Evaluate model on validation set
-                model.eval()
-                with torch.no_grad():
-                    val_loss = 0
-                    for inputs, targets in val_loader:
-                        inputs = inputs.to(device)
-                        targets = targets.to(device)
 
-                        outputs = model(inputs)
-                        val_loss += criterion(outputs, targets).item()
-                    val_loss /= len(val_loader)
-                    val_losses.append(val_loss)
 
-                trial.report(val_loss, epoch)
-                # Prune if necessary
-                if trial.should_prune():
-                    raise optuna.exceptions.TrialPruned()
-        
-        loss_score = float(np.mean(val_losses))
-        return loss_score
-    return objective
+
+
+
+
+
+
+
 
 opt_grid = {"batch_size" : (8,16),
             "learning_rate": (1e-5, 1e-1),
             "num_epochs" : (100,150)}
 
-modelList_torch_tsRegressor.append({"modelInit": LSTM,
+modelList_torch_tsRegressor.append({"modelName":"LSTM_rollingTS",
+                                    "modelInit": LSTM,
                                     "par": lstm_grid,
-                                    "opt" : opt_grid})
+                                    "opt" : opt_grid,
+                                    "from" : "torchTS"})
 
 
 
@@ -235,7 +158,8 @@ transformer_grid = {"n_heads" :[2],
                     "n_layers" : [2,4,6,8],
                     "dropout" : [.1,.2]}
 
-modelList_torch_tsRegressor.append({"modelInit": TransformerModel,
+modelList_torch_tsRegressor.append({"modelName":"Transformer_rollingTS",
+                                    "modelInit": TransformerModel,
                                     "par": transformer_grid,
                                     "opt" : opt_grid,
                                     "from": "torchTS"})

@@ -1,3 +1,13 @@
+"""tune grids for sklearn models
+        note skmodels have model().__class__.__name__
+        and that model() itself can be called m = SVR(), m(**par) can be called
+        this is why they have a ()  in the modelInit slot
+
+        modelList_sklearn_[classifier or regressor] [_lite] is the grid
+        search_s is hence the simplest loop  on the grid
+"""
+
+
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVR, SVC
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
@@ -15,6 +25,11 @@ from cubist import Cubist
 import numpy as np
 
 
+def append_from(l, v = "tabular"):
+        for i in l:
+                d=i
+                d["from"] = v
+                i=d
 
 
 

@@ -58,3 +58,13 @@ study.optimize(objective, n_trials=100)
 print(study.best_params)
 print(study.best_value)
 
+
+#
+from tuneSurvey.tsVectorize import vsearch_modelList
+X = np.empty(1000,6)
+import os
+os.mkdir("vec_search")
+os.mkdir("tsNN_search")
+vsearch_modelList(modelList,X,14,tscv)
+
+
