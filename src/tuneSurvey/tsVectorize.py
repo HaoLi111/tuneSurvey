@@ -60,9 +60,9 @@ def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_func
             print("Err during " + str(i))
     return m_Yi
 
+from joblib import parallel_backend
 
-
-def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search",save_searches=True):
+def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search",save_searches=True, inter=True):
     """
     # model - type of model (SVR(), randomForest()...)
     # X - predictor - all rows of X are used for prediction, but each model only gives on entry in Y
@@ -85,7 +85,12 @@ def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_fu
         try:
             if verbose:
                 print("working on:" + str(modelName),"model",i)
-            m_Yij = search_function(model, param_grid = parameters, cv=cv).fit(X,Y[:,i])
+            if inter:
+            	
+		with parallel_backend('threading', n_jobs=-1):
+            		m_Yij = search_function(model, param_grid = parameters, cv=cv).fit(X,Y[:,i])
+            else:
+            	m_Yij = search_function(model, param_grid = parameters,cv=cv).fit(X,Y[:,i])
 
             if save_searches:
 
