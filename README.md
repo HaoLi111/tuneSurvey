@@ -1,6 +1,16 @@
 # tuneSurvey
 
-Survey on combination of preprocesses/ features/ model types and hyperparameters on their performances and implications on the data.
+Survey on models and AutoML strategies.
+
+The purpose of this package is to:
+ - enlist a number of existing preprocessing, modeling and model-selection strategies
+ - search within all combinations above(can use brute force, optimization algorithms or inference-based strategies) to get desired accuracy (or compromised with complexity, e.x. AICs, R^2 scores)
+ - investigate stability of models and strategies w.r.t subsets of data, validation folds etc.
+ - approximate benchmarks (time and computation resources) w.r.t data size, model parameters, tune grid sizes etc.
+ 
+ 
+
+See demo.py for a quick demo.
 
 Inspired by the question "can we automate what is done by statisticians". Answering only one part of the question: "how to automate predictive model selection?"
 The purpose overlaps with various AutoMLs online. But I wish this "modelzoo" cares about tuning and selecting simpler models to:
@@ -47,6 +57,7 @@ On regularizations and kernelizations, and how to tune models
 (3) This lecture by Prof. Hulten(and the prerequisites for NFL theorem) https://www.youtube.com/watch?v=ZXWv3aA8JsI
 (4) This video by Optuna https://www.youtube.com/watch?v=P6NwZVl8ttc
 (5) This website by Prof. Miles Cranmer https://astroautomata.com/PySR/
+(6) The Kaggle Workbook
 
 
 Let's reduce overfit, find interpretability and safety in the modelfitting process!
