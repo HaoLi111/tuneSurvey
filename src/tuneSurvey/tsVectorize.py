@@ -12,7 +12,7 @@ def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_func
     # cv - cross validation type (scikit-learn obj) passed in to model selection type.
     # cv is either a number for k fold or a model selection obj for esample, cv = TimeSeriesSplit(n_splits=2, max_train_size=None, test_size=2, gap=0)
     """
-    modelName = model.__class__.__name__
+    modelName = model().__class__.__name__
     
     #Series with verbose for debugging
     n_obs, n_var = Y.shape
@@ -20,7 +20,7 @@ def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_func
     for i in range(n_var):
         if verbose:
             print("working on:" + str(modelName),"model",i)
-        m_Yi.append(search_function(model, param_grid = parameters, cv=cv).fit(X,Y[:,i]))
+        m_Yi.append(search_function(model(), param_grid = parameters, cv=cv).fit(X,Y[:,i]))
     return m_Yi
 
 
