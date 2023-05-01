@@ -2,7 +2,8 @@
     
 """
 import pickle
-from copy import deepcopy
+import numpy as np
+from copy import copy,deepcopy
 
 from sklearn.model_selection import GridSearchCV
 
@@ -11,15 +12,16 @@ from sklearn.model_selection import GridSearchCV
 def split_tscv_by_order_features(rawdata, order_features):
     """
     to protect origional vector, do from copy import deepcopy"""
+    n_obs, n_var = rawdata.shape
     X = np.zeros([n_obs-order_features, order_features*n_var])
     #yjs are the columns
     for i in range(n_obs - order_features):
         for j in range(order_features):
             for k in range(n_var):
-                X[i,k+j*n_var] = rawData[i+j,k]
+                X[i,k+j*n_var] = rawdata[i+j,k]
 
     X_usable = X
-    Y_usable = rawData[order_features:,:]#
+    Y_usable = rawdata[order_features:,:]#
     return X_usable, Y_usable
     
 
@@ -69,7 +71,7 @@ def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_fu
     # cv is either a number for k fold or a model selection obj for esample, cv = TimeSeriesSplit(n_splits=2, max_train_size=None, test_size=2, gap=0)
     """
 
-        
+    model = modelDict["modelInit"]
     try:
         modelName = modelDict["modelName"]
     except:
@@ -134,20 +136,6 @@ def vectorized_Search_hyperparameter_multimodel(modelList,X,Y,cv=5,search_functi
             m_Yi.append(search_function(m["modelInit"], param_grid = m["par"], cv=cv).fit(X,Y[:,j]))
         resultList.append(m_Yi.copy())
     return resultList
-
-def split_tscv_by_order_features(rawdata, order_features):
-    """
-    to protect origional vector, do from copy import deepcopy"""
-    X = np.zeros([n_obs-order_features, order_features*n_var])
-    #yjs are the columns
-    for i in range(n_obs - order_features):
-        for j in range(order_features):
-            for k in range(n_var):
-                X[i,k+j*n_var] = rawData[i+j,k]
-
-    X_usable = X
-    Y_usable = rawData[order_features:,:]#
-    return X_usable, Y_usable
 
 
 def saveModelList_s(modelList,X,Y,path="sklModels",verbose=False):
@@ -545,18 +533,19 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
 def vsearch_modelList(modelList, data, seq_len, cv):
     r = []
     for modelDict in modelList:
-        if modelDict["from"] ==  "tabular":
-            X, Y = split_tscv_by_order_features(rawdata,seq_len)
-            ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
-            
-        elif modelDict["from"] == "torchTS":
-            
-            objective = create_objective_ts_modelDict(modelDict, cv, data, device, seq_len)
-            study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
-            study.optimize(objective, n_trials=100)
-            ri = study
-        else:
-            X, Y = split_tscv_by_order_features(rawdata,seq_len)
+        try:            
+            if modelDict["from"] ==  "tabular":
+                X, Y = split_tscv_by_order_features(data,seq_len)
+                ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
+                
+            elif modelDict["from"] == "torchTS":
+                
+                objective = create_objective_ts_modelDict(modelDict, cv, data, device, seq_len)
+                study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
+                study.optimize(objective, n_trials=100)
+                ri = study
+        except:
+            X, Y = split_tscv_by_order_features(data,seq_len)
             ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
         r.append(deepcopy(ri))
     return r
