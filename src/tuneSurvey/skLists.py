@@ -35,7 +35,7 @@ def append_from(l, v = "tabular"):
 
 modelList_sklearn_regressor_lite = [{'modelInit' : ElasticNet(),
              'par':{'alpha': [.1,.5,1.0],
-                   'l1_ratio': np.linspace(0.0,1.0,11),
+                   'l1_ratio': np.linspace(0.1,.9,11),
                    'max_iter' : [1000000]}},
              {'modelInit':PLSRegression(),
              'par':{'n_components': [1,2,3,4,5]}},#n<= min samples features targets

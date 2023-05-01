@@ -62,7 +62,7 @@ def vectorized_Search_hyperparameter(model, parameters, X, Y,cv =  5,search_func
 
 
 
-def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search"):
+def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_function = GridSearchCV,verbose =False, path = "vec_search",save_searches=True):
     """
     # model - type of model (SVR(), randomForest()...)
     # X - predictor - all rows of X are used for prediction, but each model only gives on entry in Y
