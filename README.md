@@ -1,16 +1,16 @@
 # tuneSurvey
 
-Survey on models and AutoML strategies.
+Survey on models, pipelines and AutoML strategies for competitive modeling tasks.
 
 The purpose of this package is to:
  - enlist a number of existing preprocessing, modeling and model-selection strategies
  - search within all combinations above(can use brute force, optimization algorithms or inference-based strategies) to get desired accuracy (or compromised with complexity, e.x. AICs, R^2 scores)
  - investigate stability of models and strategies w.r.t subsets of data, validation folds etc.
  - approximate benchmarks (time and computation resources) w.r.t data size, model parameters, tune grid sizes etc.
- 
- 
 
 See demo.py for a quick demo.
+
+For each modules and function, use help() to access doc string help.
 
 Inspired by the question "can we automate what is done by statisticians". Answering only one part of the question: "how to automate predictive model selection?"
 The purpose overlaps with various AutoMLs online. But I wish this "modelzoo" cares about tuning and selecting simpler models to:
