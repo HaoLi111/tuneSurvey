@@ -8,7 +8,6 @@ from copy import copy,deepcopy
 from sklearn.model_selection import GridSearchCV
 
 
-
 def split_tscv_by_order_features(rawdata, order_features):
     """
     to protect origional vector, do from copy import deepcopy"""
@@ -85,7 +84,7 @@ def vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv =  5,search_fu
         try:
             if verbose:
                 print("working on:" + str(modelName),"model",i)
-            if inter:
+            if inter and modelDict["inter"]==True:
                 with parallel_backend('threading', n_jobs=-1):
                     m_Yij = search_function(model, param_grid = parameters,cv=cv).fit(X,Y[:,i])
             else:
@@ -335,6 +334,28 @@ import optuna
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import DataLoader, TensorDataset
 
+import torch
+
+def create_sequences(data, seq_len):
+    X = []
+    y = []
+    for i in range(seq_len, len(data)):
+        X.append(torch.tensor(data[i-seq_len:i,:]))
+        y.append(torch.tensor(data[i, :]))
+        
+    X_tensor = torch.stack(X)
+    y_tensor = torch.stack(y)
+    return X_tensor, y_tensor
+
+def create_n_seq_ts(data,seq_len,id_split):
+    """
+    #seq_len=5
+    #x,y,xt,yt = create_n_seq_ts(data,seq_len,90)
+    """
+    X,y = create_sequences(data=data,seq_len=seq_len)
+    
+    return X[0:id_split,:], y[0:id_split,:], X[id_split:,:], y[id_split:,:]
+
 
 
 def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq_len,modelName = "Unnamed"):
@@ -452,6 +473,7 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
     modelName = modelDict["modelName"]
     tune_grid = modelDict["par"]
     opt_params = modelDict["opt"]
+    model_class = modelDict["modelInit"]
     nVar = data.shape[1]
     def objective(trial):
         # Sample hyperparameters from tuning grid
@@ -535,7 +557,8 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
 
 
 
-def vsearch_modelList(modelList, data, seq_len, cv):
+def vsearch_modelList(modelList, data, seq_len, cv, device="cuda"):
+    
     r = []
     for modelDict in modelList:
         try:            
@@ -544,6 +567,7 @@ def vsearch_modelList(modelList, data, seq_len, cv):
                 ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
                 
             elif modelDict["from"] == "torchTS":
+            
                 
                 objective = create_objective_ts_modelDict(modelDict, cv, data, device, seq_len)
                 study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())

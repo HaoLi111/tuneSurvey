@@ -49,25 +49,6 @@ def ts_aggregate_flatten(X, n_order, n_forward = 1, flatten_predictor = False, f
 
 
 
-def create_sequences(data, seq_len):
-    X = []
-    y = []
-    for i in range(seq_len, len(data)):
-        X.append(data[i-seq_len:i,:])
-        y.append(data[i, :])
-    X_tensor = torch.stack(X)
-    y_tensor = torch.stack(y) # stack the tensors in y into a single tensor
-    return X_tensor, y_tensor
-
-def create_n_seq_ts(data,seq_len,id_split):
-    """
-    #seq_len=5
-    #x,y,xt,yt = create_n_seq_ts(data,seq_len,90)
-    """
-    X,y = create_sequences(data=data,seq_len=seq_len)
-    
-    return X[0:id_split,:], y[0:id_split,:], X[id_split:,:], y[id_split:,:]
-
 
 
 

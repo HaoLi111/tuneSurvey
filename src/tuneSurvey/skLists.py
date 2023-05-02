@@ -25,10 +25,10 @@ from cubist import Cubist
 import numpy as np
 
 
-def append_from(l, v = "tabular"):
+def append_from(l,k = "form", v = "tabular"):
         for i in l:
                 d=i
-                d["from"] = v
+                d[k] = v
                 i=d
 
 
@@ -54,6 +54,9 @@ modelList_sklearn_regressor_lite = [{'modelInit' : ElasticNet(),
               'par' : {'learning_rate': [.1, 1]}},
              {'modelInit' : GradientBoostingRegressor(),
               'par' : {'learning_rate': [.1, 1]}}]
+
+
+append_from(modelList_sklearn_regressor_lite, "inter", True)
 
 modelList_sklearn_regressor = [{'modelInit' : ElasticNet(),
              'par':{'alpha': [.1,.5,1.0],
