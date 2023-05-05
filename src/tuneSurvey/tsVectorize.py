@@ -548,14 +548,14 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
                 # Prune if necessary
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
-            try:
-                #path = "tsNN_search"
-                filename = path + "/" + modelName+ str(trail.number)
-                pickle.dump(model, open(filename, "wb"))
-                
-                
-            except:
-                print("saving" +modelName+"failed in TS torch")
+        try:
+        #path = "tsNN_search"
+        filename = path + "/" + modelName+ str(trail.number)
+        pickle.dump(model, open(filename, "wb"))
+        
+        
+        except:
+        print("saving" +modelName+"failed in TS torch")
         loss_score = float(np.mean(val_losses))
         return loss_score
     return objective
