@@ -31,6 +31,27 @@ def append_from(l,k = "form", v = "tabular"):
                 d[k] = v
                 i=d
 
+modelList_sklearn_regressor_ultralite = [{'modelInit' : ElasticNet(),
+             'par':{'alpha': [.1,.5,1.0],
+                   'l1_ratio': np.linspace(0.1,.9,11),
+                   'max_iter' : [1000000]}},
+#             {'modelInit':PLSRegression(),
+#             'par':{'n_components': [1,2,3,4,5]}},#n<= min samples features targets
+             {'modelInit' : SVR(),
+              'par' : { 'C':[10000,1000, 100, 10, 1, .1],
+                     'epsilon': [0.1, 0.01, 0.05, 0.001],
+                     'gamma': ['scale', 'auto']}},
+             {'modelInit' : DecisionTreeRegressor(),
+             'par':{'ccp_alpha': [0.0, 0.01,0.02,0.03],
+                    'criterion': ['squared_error','friedman_mse'],'max_depth': [5,10,None]}},
+             {'modelInit' : BaggingRegressor(),
+             'par' : {'n_estimators': [5,10,15]}},
+             {'modelInit' : RandomForestRegressor(),
+              'par' : {'n_estimators': [10, 50, 100, 150, 200, 400, 600]}},
+#             {'modelInit' : AdaBoostRegressor(),
+#              'par' : {'learning_rate': [.1, 1]}},
+             {'modelInit' : GradientBoostingRegressor(),
+              'par' : {'learning_rate': [.1, 1]}}]
 
 
 modelList_sklearn_regressor_lite = [{'modelInit' : ElasticNet(),

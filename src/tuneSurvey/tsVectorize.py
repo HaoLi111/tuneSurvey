@@ -358,7 +358,7 @@ def create_n_seq_ts(data,seq_len,id_split):
 
 
 
-def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq_len,modelName = "Unnamed"):
+def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq_len,modelName = "Unnamed",path = "tsNN_search"):
     """
     Returns an objective() function to be optimized by Optuna
 
@@ -443,9 +443,15 @@ def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq
                 # Prune if necessary
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
-            path = "tsNN_search"
-            with open(path+"/"+modelName+"_"+str(trial.number)+".pickle", "wb") as fout:
-                pickle.dump(model, fout)
+            
+            try:
+                #path = "tsNN_search"
+                filename = path + "/" + modelName+ str(trail.number)
+                pickle.dump(model, open(filename, "wb"))
+                
+                
+            except:
+                print("saving" +modelName+"failed in TS torch")
         loss_score = float(np.mean(val_losses))
         return loss_score
     return objective
@@ -544,8 +550,10 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
                     raise optuna.exceptions.TrialPruned()
             try:
                 #path = "tsNN_search"
-                with open(path+"/"+modelName+"_"+str(trial.number)+".pickle", "wb") as fout:
-                    pickle.dump(model, fout)
+                filename = path + "/" + modelName+ str(trail.number)
+                pickle.dump(model, open(filename, "wb"))
+                
+                
             except:
                 print("saving" +modelName+"failed in TS torch")
         loss_score = float(np.mean(val_losses))
