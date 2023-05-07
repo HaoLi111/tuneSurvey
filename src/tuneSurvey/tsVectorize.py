@@ -412,7 +412,6 @@ def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq
             
             
             for epoch in range(num_epochs):
-                # Train model
                 model.train()
                 for inputs, targets in train_loader:
                     inputs = inputs.to(device)
@@ -426,7 +425,6 @@ def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq
                     loss.backward()
                     optimizer.step()
 
-                # Evaluate model on validation set
                 model.eval()
                 with torch.no_grad():
                     val_loss = 0
@@ -440,18 +438,19 @@ def create_objective_ts(model_class, cv, tune_grid, opt_params,data, device, seq
                     val_losses.append(val_loss)
 
                 trial.report(val_loss, epoch)
-                # Prune if necessary
+
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
+            filename = path + "/" + modelName+ str(trial.number)
             
             try:
                 #path = "tsNN_search"
-                filename = path + "/" + modelName+ str(trail.number)
+                
                 pickle.dump(model, open(filename, "wb"))
                 
                 
             except:
-                print("saving" +modelName+"failed in TS torch")
+                print("saving" +filename+"failed in TS torch")
         loss_score = float(np.mean(val_losses))
         return loss_score
     return objective
@@ -546,16 +545,21 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
 
                 trial.report(val_loss, epoch)
                 # Prune if necessary
+                save = True
                 if trial.should_prune():
+                    save = False
                     raise optuna.exceptions.TrialPruned()
+        filename = path + "/" + modelName+ str(trial.number)
+        
         try:
-        #path = "tsNN_search"
-        filename = path + "/" + modelName+ str(trail.number)
-        pickle.dump(model, open(filename, "wb"))
-        
-        
+            #path = "tsNN_search"
+
+            if save:
+                pickle.dump(model, open(filename, "wb"))
+            
+            
         except:
-        print("saving" +modelName+"failed in TS torch")
+            print("saving" +filename+"failed in TS torch")
         loss_score = float(np.mean(val_losses))
         return loss_score
     return objective
@@ -565,7 +569,7 @@ def create_objective_ts_modelDict(modelDict, cv, data, device, seq_len, path = "
 
 
 
-def vsearch_modelList(modelList, data, seq_len, cv, device="cuda"):
+def vsearch_modelList(modelList, data, seq_len, cv, device):
     
     r = []
     for modelDict in modelList:
@@ -573,6 +577,8 @@ def vsearch_modelList(modelList, data, seq_len, cv, device="cuda"):
             if modelDict["from"] ==  "tabular":
                 X, Y = split_tscv_by_order_features(data,seq_len)
                 ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
+                
+
                 
             elif modelDict["from"] == "torchTS":
             
@@ -585,6 +591,8 @@ def vsearch_modelList(modelList, data, seq_len, cv, device="cuda"):
             X, Y = split_tscv_by_order_features(data,seq_len)
             ri = vectorized_Search_hyperparameter_modelDict(modelDict, X, Y,cv ,search_function = GridSearchCV,verbose =False, path = "vec_search")
         r.append(deepcopy(ri))
+
+        
     return r
 
 

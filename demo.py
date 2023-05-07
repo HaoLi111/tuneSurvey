@@ -52,7 +52,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
 from tuneSurvey.tsVectorize import *
 seq_len=20
 tscv = TimeSeriesSplit(n_splits=3)
-objective = create_objective_ts(LSTM,tscv,lstm_grid,opt_grid,X,device, seq_len)
+objective = create_objective_ts(LSTM,tscv,lstm_grid,opt_grid,X,device, seq_len, path = "test")
 
 study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
 study.optimize(objective, n_trials=100)
