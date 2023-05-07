@@ -3,7 +3,7 @@
 import numpy as np
 import math
 
-n = 5000 #
+n = 3000 #
 s = 150 # split to exterior validation set
 
 m = 20

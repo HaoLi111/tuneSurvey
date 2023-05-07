@@ -135,7 +135,7 @@ class TransformerModel(nn.Module):
         x = self.decoder(x[:, -1, :])
         return x
 
-transformer_grid = {"n_heads" :[2],
+transformer_grid = {"n_heads" :[6,8,10],
                     "n_layers" : [2,4,6,8],
                     "dropout" : [.1,.2]}
 
